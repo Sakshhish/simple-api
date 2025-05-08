@@ -12,6 +12,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Navigate to code directory
+        run: cd api_struct
+
       - name: Add SSH key
         run: |
           mkdir -p ~/.ssh
@@ -20,8 +23,7 @@ jobs:
           ssh-keyscan -H ${{ vars.VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Install dependencies
-        run: |
-          npm install
+        run: npm install
 
       - name: Deploy to VM
         uses: appleboy/ssh-action@v0.1.10
@@ -33,10 +35,10 @@ jobs:
           script: |
             DEPLOYMENT_PATH=/home/azureuser/simple-api
             mkdir -p $DEPLOYMENT_PATH
-            rsync -avz --exclude '.git' . ${{ vars.VM_USERNAME }}@${{ vars.VM_HOST }}:$DEPLOYMENT_PATH
+            rsync -avz --exclude '.git' api_struct/ ${{ vars.VM_USERNAME }}@${{ vars.VM_HOST }}:$DEPLOYMENT_PATH
             cd $DEPLOYMENT_PATH
-            npm start &
-            echo "Express.js API deployed and running in the background!"
+            sudo npm start &
+            echo "Express.js API deployed and running in the background with sudo!"
 
       - name: Verify API is running (on VM)
         uses: appleboy/ssh-action@v0.1.10
