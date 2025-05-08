@@ -13,7 +13,8 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Navigate to code directory
-        run: cd api_struct
+        working-directory: ./api_struct
+        run: echo "Changed to api_struct"
 
       - name: Add SSH key
         run: |
@@ -23,6 +24,7 @@ jobs:
           ssh-keyscan -H ${{ vars.VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Install dependencies
+        working-directory: ./api_struct        
         run: npm install
 
       - name: Deploy to VM
