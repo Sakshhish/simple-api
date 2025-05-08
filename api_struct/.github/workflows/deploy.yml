@@ -1,0 +1,55 @@
+name: Deploy to VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ vars.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r backend-api/requirements.txt
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.VM_HOST }}
+          username: ${{ vars.VM_USERNAME }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
+          script: |
+            DEPLOYMENT_PATH=/home/azureuser/backend-api
+            mkdir -p $DEPLOYMENT_PATH
+            rsync -avz --exclude '.git' backend-api/ ${{ vars.VM_USERNAME }}@${{ vars.VM_HOST }}:$DEPLOYMENT_PATH
+            cd $DEPLOYMENT_PATH
+            nohup python app.py &
+            echo "Backend API deployed and running in the background!"
+
+      - name: Verify API is running (on VM)
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ vars.VM_HOST }}
+          username: ${{ vars.VM_USERNAME }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
+          script: |
+            until curl -s --fail http://localhost:80/sayHello; do
+              echo "Waiting for API to start..."
+              sleep 5
+            done
+            echo "API is running and /sayHello is accessible!"
