@@ -21,9 +21,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r backend-api/requirements.txt
+          npm install
 
       - name: Deploy to VM
         uses: appleboy/ssh-action@v0.1.10
@@ -33,12 +31,12 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: 22
           script: |
-            DEPLOYMENT_PATH=/home/azureuser/backend-api
+            DEPLOYMENT_PATH=/home/azureuser/simple-api
             mkdir -p $DEPLOYMENT_PATH
-            rsync -avz --exclude '.git' backend-api/ ${{ vars.VM_USERNAME }}@${{ vars.VM_HOST }}:$DEPLOYMENT_PATH
+            rsync -avz --exclude '.git' . ${{ vars.VM_USERNAME }}@${{ vars.VM_HOST }}:$DEPLOYMENT_PATH
             cd $DEPLOYMENT_PATH
-            nohup python app.py &
-            echo "Backend API deployed and running in the background!"
+            npm start &
+            echo "Express.js API deployed and running in the background!"
 
       - name: Verify API is running (on VM)
         uses: appleboy/ssh-action@v0.1.10
